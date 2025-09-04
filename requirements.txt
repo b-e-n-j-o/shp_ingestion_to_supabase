@@ -1,0 +1,9 @@
+streamlit>=1.36
+pandas>=2.2
+geopandas>=0.14.4
+pyogrio>=0.9.0
+shapely>=2.0.3
+sqlalchemy>=2.0.31
+psycopg[binary]>=3.2
+geoalchemy2>=0.15.2
+python-dotenv>=1.0.1
