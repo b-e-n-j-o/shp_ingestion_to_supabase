@@ -2,6 +2,7 @@
 import os
 import pandas as pd
 import streamlit as st
+from sqlalchemy import text
 from utils_db import (
     get_engine, list_postgis_tables, table_overview, upload_shapefile_zip
 )
@@ -12,6 +13,23 @@ st.set_page_config(page_title="PostGIS Browser + Uploader", layout="wide")
 engine = get_engine()  # lit .env (SUPABASE_HOST, USER, PASSWORD, DB, PORT)
 
 st.title("PostGIS (Supabase) — Browser & Shapefile Uploader")
+
+# === Debug connexion ===
+if st.checkbox("🔧 Debug connexion"):
+    st.json({
+        "host": os.getenv("SUPABASE_HOST"),
+        "port": os.getenv("SUPABASE_PORT"),
+        "db": os.getenv("SUPABASE_DB"),
+        "user": os.getenv("SUPABASE_USER"),
+    })
+    try:
+        with engine.connect() as conn:
+            v = conn.execute(text("select version()")).scalar()
+        st.success("Connexion OK")
+        st.caption(v)
+    except Exception as e:
+        st.error("Échec de connexion")
+        st.exception(e)
 
 # === Tables géométriques ===
 tables = list_postgis_tables(engine)  # [{schema, table, geom_column, geom_type, srid}]

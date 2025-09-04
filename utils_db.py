@@ -34,26 +34,34 @@ def _env(k, d=None):
     return v.strip() if isinstance(v, str) else v
 
 def get_engine():
-    # Lis tes variables .env / environ
-    host = _env("SUPABASE_HOST")
-    db   = _env("SUPABASE_DB", "postgres")
-    user = _env("SUPABASE_USER", "postgres")
-    pwd  = _env("SUPABASE_PASSWORD")
-    port = int(_env("SUPABASE_PORT", "5432"))  # essaie 6543 si tu utilises le pooler
+    host = os.getenv("SUPABASE_HOST", "").strip()
+    port = int(os.getenv("SUPABASE_PORT", "5432"))
+    db   = os.getenv("SUPABASE_DB", "postgres").strip()
+    user = os.getenv("SUPABASE_USER", "").strip()
+    pwd  = os.getenv("SUPABASE_PASSWORD", "").strip()
 
+    # Garde-fous typiques
     if not host:
         raise RuntimeError("SUPABASE_HOST manquant (vérifie le chargement de .env).")
+    if "://" in host:
+        raise RuntimeError("SUPABASE_HOST ne doit PAS contenir 'postgres://...' — mets juste le hostname.")
+    if ":" in host:
+        raise RuntimeError("Ne mets pas le port dans SUPABASE_HOST. Utilise SUPABASE_PORT séparément.")
 
-    # ✅ URL.create gère l’échappement (mots de passe avec +, @, etc.)
     url = URL.create(
-        drivername="postgresql+psycopg",
+        "postgresql+psycopg",
         username=user,
         password=pwd,
         host=host,
         port=port,
         database=db,
-        query={"sslmode": "require"},  # Supabase requiert SSL
+        query={"sslmode": "require", "connect_timeout": "10"},
     )
+
+    # Si tu passes en transaction mode (6543), tu peux ajouter :
+    # connect_args={"prepare_threshold": 0}
+    # return create_engine(url, pool_pre_ping=True, connect_args={"prepare_threshold": 0})
+
     return create_engine(url, pool_pre_ping=True)
 
 
